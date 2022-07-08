@@ -35,13 +35,16 @@ def signup(request):
                     username=username, password=password, email=email)
                 user.save()
 
+                user_login = authenticate(username=username, password=password)
+                login(request, user_login)
+
                 user_model = User.objects.get(username=username)
                 user_profile = Profile.objects.create(
                     user=user_model, id_user=user_model.id)
 
                 new_profile = user_profile.save()
                 messages.info(request, 'user created')
-                return redirect('signin')
+                return redirect('settings  ')
             # return HttpResponse('Success')
         else:
             messages.info(request, 'password not matching')
@@ -70,5 +73,38 @@ def signout(request):
     return redirect('signin')
 
 
+@login_required(login_url='signin')
 def settings(request):
-    return render(request, 'settings.html')
+    user_profile = Profile.objects.get(user=request.user)
+
+    if request.method == "POST":
+        print(request.FILES)
+        if request.FILES.get('image') == None:
+            image = user_profile.profileimg
+            location = request.POST['location']
+            bio = request.POST['bio']
+
+            user_profile.location = location
+            user_profile.bio = bio
+            user_profile.profileimg = image
+            # print(image)
+            user_profile.save()
+            messages.info(request, 'profile updated')
+
+        if request.FILES.get('image') != None:
+            image = request.FILES.get('image')
+            location = request.POST['location']
+            bio = request.POST['bio']
+
+            user_profile.location = location
+            user_profile.bio = bio
+            user_profile.profileimg = image
+
+            # print(image)
+            user_profile.save()
+        return redirect('settings')
+
+    context = {
+        'user_profile': user_profile
+    }
+    return render(request, 'setting.html', context)
